@@ -5,6 +5,47 @@ Contains a collection of generally useful middlewares for use with Go's built-in
 
 ## Middleware
 
+### Error Handler
+
+Handles HTTP status codes by invoking custom handlers. When a registered status
+code is returned by the next handler, its response is dropped and replaced with
+the custom handler's response.
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	notFoundHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Custom 404 page"))
+	})
+
+	serverErrorHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Custom 500 page"))
+	})
+
+	handler := middleware.ErrorHandler(
+		mux,
+		// Add one more handlers for specific status codes
+		middleware.WithErrorHandler(http.StatusNotFound, notFoundHandler),
+		middleware.WithErrorHandler(http.StatusInternalServerError, serverErrorHandler),
+		// If you want to preserve headers set by the original handler
+		middleware.WithClearHeadersOnError(false),
+	)
+
+	http.ListenAndServe(":8080", handler)
+}
+```
+
 ### Real Address
 
 Gets the real address of the client by parsing `X-Forwarded-For` headers from

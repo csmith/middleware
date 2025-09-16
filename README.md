@@ -62,6 +62,37 @@ func main() {
 }
 ```
 
+### Text Log
+
+Logs details of each request in either Common Log Format or Combined Log Format.
+
+```go
+package main
+
+import (
+	"net/http"
+	"os"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// With default options (Common Log Format to stdout)
+	http.ListenAndServe(":8080", middleware.TextLog(mux))
+
+	// With Combined Log Format
+	http.ListenAndServe(":8080", middleware.TextLog(mux, middleware.WithTextLogFormat(middleware.TextLogFormatCombined)))
+
+	// With custom sink
+	file, _ := os.OpenFile("access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	http.ListenAndServe(":8080", middleware.TextLog(mux, middleware.WithTextLogSink(func(line string) {
+		file.WriteString(line + "\n")
+	})))
+}
+```
+
 ## Issues/Contributing/etc
 
 Bug reports, feature requests, and pull requests are all welcome.

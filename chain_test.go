@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -125,4 +126,42 @@ func TestChain_MiddlewareExecutionOrder(t *testing.T) {
 
 	expectedOrder := []int{3, 2, 1, 0}
 	assert.Equal(t, expectedOrder, order)
+}
+
+func TestChain_MiddlewareNotAppliedMultipleTimes(t *testing.T) {
+	var callCount int
+
+	middleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			w.Header().Set("X-Call-Count", fmt.Sprintf("%d", callCount))
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("response"))
+	})
+
+	handler := Chain(WithMiddleware(middleware))(nextHandler)
+
+	// First request
+	req1 := httptest.NewRequest("GET", "/test", nil)
+	rr1 := httptest.NewRecorder()
+	handler.ServeHTTP(rr1, req1)
+
+	assert.Equal(t, http.StatusOK, rr1.Code)
+	assert.Equal(t, "1", rr1.Header().Get("X-Call-Count"))
+
+	// Second request - should not have middleware applied twice
+	req2 := httptest.NewRequest("GET", "/test", nil)
+	rr2 := httptest.NewRecorder()
+	handler.ServeHTTP(rr2, req2)
+
+	assert.Equal(t, http.StatusOK, rr2.Code)
+	assert.Equal(t, "2", rr2.Header().Get("X-Call-Count"))
+
+	// Verify middleware was only called once per request, not accumulated
+	assert.Equal(t, 2, callCount)
 }

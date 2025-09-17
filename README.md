@@ -37,6 +37,38 @@ func main() {
 }
 ```
 
+### Chain
+
+Allows you to chain other middleware together, without directly chaining the
+function calls.
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+	notFoundHandler := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+        // ...
+	})
+
+	chain := middleware.Chain(middleware.WithMiddleware(
+		// Innermost
+		middleware.CacheControl(),
+		middleware.ErrorHandler(middleware.WithErrorHandler(http.StatusNotFound, notFoundHandler)),
+		middleware.TextLog(middleware.WithTextLogFormat(middleware.TextLogFormatCombined)),
+		middleware.Recover(),
+		// Outermost
+    ))
+	http.ListenAndServe(":8080", chain(mux))
+}
+```
+
 ### Error Handler
 
 Handles HTTP status codes by invoking custom handlers. When a registered status

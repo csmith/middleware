@@ -37,6 +37,33 @@ func main() {
 }
 ```
 
+### Compress
+
+Automatically compresses the response body if the client accepts gzip encoding.
+Supports configurable compression levels and handles Accept-Encoding headers
+with quality values.
+
+```go
+package main
+
+import (
+	"compress/gzip"
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// With default compression level
+	http.ListenAndServe(":8080", middleware.Compress()(mux))
+
+	// With custom compression level
+	http.ListenAndServe(":8080", middleware.Compress(middleware.WithGzipLevel(gzip.BestSpeed))(mux))
+}
+```
+
 ### Chain
 
 Allows you to chain other middleware together, without directly chaining the

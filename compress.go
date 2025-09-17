@@ -39,6 +39,7 @@ func Compress(opts ...CompressOption) func(http.Handler) http.Handler {
 
 			encs := parseEncodings(r.Header.Values("Accept-Encoding"))
 			if encs["gzip"] > 0 || encs["*"] > 0 {
+				w.Header().Set("Content-Encoding", "gzip")
 				writer, err := gzip.NewWriterLevel(w, config.gzipLevel)
 				if err != nil {
 					// Bad gzip level, just serve unencoded response

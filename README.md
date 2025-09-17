@@ -69,6 +69,32 @@ func main() {
 }
 ```
 
+### Cross Origin Protection
+
+Defends against CSRF attacks by denying unsafe requests that originated from a
+different origin. GET, HEAD and OPTIONS requests are always allowed. Any other
+request has its `Sec-Fetch-Site` header verified. If present, it must either be
+`same-origin` or `none` for the request to proceed.
+
+Denied requests are responded to with a 403 response with no body. Chain this
+middleware with Error Handler to customise this.
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	http.ListenAndServe(":8080", middleware.CrossOriginProtection()(mux))
+}
+```
+
 ### Error Handler
 
 Handles HTTP status codes by invoking custom handlers. When a registered status

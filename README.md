@@ -5,6 +5,38 @@ Contains a collection of generally useful middlewares for use with Go's built-in
 
 ## Middleware
 
+### Cache Control
+
+Automatically sets a `Cache-Control` header with a max-age based on the
+`Content-Type` header. By default, static assets like images, videos, and
+downloads get a max-age of 1 year, while text assets like HTML and CSS get a
+max-age of 1 hour.
+
+```go
+package main
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// With default cache times
+	http.ListenAndServe(":8080", middleware.CacheControl(mux))
+
+	// With custom cache times
+	http.ListenAndServe(":8080", middleware.CacheControl(mux, middleware.WithCacheTimes(map[string]time.Duration{
+		"application/json": time.Duration(0),
+		"image/*":          time.Hour * 24,
+		"text/css":         time.Hour * 12,
+	})))
+}
+```
+
 ### Error Handler
 
 Handles HTTP status codes by invoking custom handlers. When a registered status

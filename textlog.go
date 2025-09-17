@@ -58,7 +58,9 @@ func TextLog(next http.Handler, opts ...TextLogOption) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wrapped := wrap(w)
+		wrapped := &textLogWrapper{
+			ResponseWriter: w,
+		}
 		start := conf.clock()
 		next.ServeHTTP(wrapped, r)
 		conf.sink(formatTextLog(conf.format, r, wrapped.status, wrapped.written, start))
@@ -127,4 +129,26 @@ func escapeLogValue(s string) string {
 		}
 	}
 	return result.String()
+}
+
+type textLogWrapper struct {
+	http.ResponseWriter
+	written int
+	status  int
+	headers bool
+}
+
+func (t *textLogWrapper) WriteHeader(code int) {
+	t.headers = true
+	t.status = code
+	t.ResponseWriter.WriteHeader(code)
+}
+
+func (t *textLogWrapper) Write(b []byte) (int, error) {
+	if !t.headers {
+		t.WriteHeader(http.StatusOK)
+	}
+	n, err := t.ResponseWriter.Write(b)
+	t.written += n
+	return n, err
 }

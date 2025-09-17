@@ -52,12 +52,14 @@ func ErrorHandler(next http.Handler, opts ...ErrorHandlerOption) http.Handler {
 
 type errorHandlingWrapper struct {
 	http.ResponseWriter
-	req  *http.Request
-	conf *errorHandlerConfig
-	drop bool
+	req     *http.Request
+	conf    *errorHandlerConfig
+	drop    bool
+	headers bool
 }
 
 func (e *errorHandlingWrapper) WriteHeader(code int) {
+	e.headers = true
 	if h, ok := e.conf.handlers[code]; ok {
 		e.drop = true
 
@@ -74,6 +76,10 @@ func (e *errorHandlingWrapper) WriteHeader(code int) {
 }
 
 func (e *errorHandlingWrapper) Write(b []byte) (int, error) {
+	if !e.headers {
+		e.WriteHeader(http.StatusOK)
+	}
+
 	if e.drop {
 		return len(b), nil
 	}

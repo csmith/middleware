@@ -112,6 +112,39 @@ func TestErrorHandler_HeadersClearedByDefault(t *testing.T) {
 	assert.Equal(t, "", rr.Header().Get("Content-Type"))
 }
 
+func TestErrorHandler_WriteWithoutHeaders(t *testing.T) {
+	handler := ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only call Write, not WriteHeader - should default to 200
+		w.Write([]byte("success content"))
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	// Should default to 200 status with no error handler triggered
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "success content", rr.Body.String())
+}
+
+func TestErrorHandler_MultipleWrites(t *testing.T) {
+	handler := ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Multiple writes without explicit WriteHeader
+		w.Write([]byte("hello "))
+		w.Write([]byte("world"))
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	// Should default to 200 status with concatenated content
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "hello world", rr.Body.String())
+}
+
 func TestErrorHandler_HeadersNotClearedWhenDisabled(t *testing.T) {
 	errorHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Custom-Error", "error-page")

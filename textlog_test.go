@@ -114,3 +114,56 @@ func TestEscapeLogValue(t *testing.T) {
 		})
 	}
 }
+
+func TestTextLog_WriteWithoutHeaders(t *testing.T) {
+	var logOutput string
+	sink := func(s string) {
+		logOutput = s
+	}
+
+	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
+
+	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only call Write, not WriteHeader - should default to 200
+		w.Write([]byte("test content"))
+	}), WithTextLogSink(sink), withTestClock(testTime))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.RemoteAddr = "127.0.0.1:8080"
+	req.Proto = "HTTP/1.1"
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	// Should log with status 200 and content length 12
+	expected := `127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET /test HTTP/1.1" 200 12`
+	assert.Equal(t, expected, logOutput)
+	assert.Equal(t, "test content", rr.Body.String())
+}
+
+func TestTextLog_MultipleWrites(t *testing.T) {
+	var logOutput string
+	sink := func(s string) {
+		logOutput = s
+	}
+
+	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
+
+	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Multiple writes without explicit WriteHeader
+		w.Write([]byte("hello "))
+		w.Write([]byte("world"))
+	}), WithTextLogSink(sink), withTestClock(testTime))
+
+	req := httptest.NewRequest("GET", "/multiwrite", nil)
+	req.RemoteAddr = "127.0.0.1:8080"
+	req.Proto = "HTTP/1.1"
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	// Should log with status 200 and total content length 11
+	expected := `127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET /multiwrite HTTP/1.1" 200 11`
+	assert.Equal(t, expected, logOutput)
+	assert.Equal(t, "hello world", rr.Body.String())
+}

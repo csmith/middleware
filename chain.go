@@ -34,7 +34,7 @@ func Chain(opts ...ChainOption) func(http.Handler) http.Handler {
 		for _, m := range conf.middleware {
 			next = m(next)
 		}
-		
+
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			next.ServeHTTP(w, req)
 		})

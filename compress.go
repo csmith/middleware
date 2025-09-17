@@ -35,11 +35,8 @@ func Compress(opts ...CompressOption) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("Vary", "Accept-Encoding")
-
 			encs := parseEncodings(r.Header.Values("Accept-Encoding"))
 			if encs["gzip"] > 0 || encs["*"] > 0 {
-				w.Header().Set("Content-Encoding", "gzip")
 				writer, err := gzip.NewWriterLevel(w, config.gzipLevel)
 				if err != nil {
 					// Bad gzip level, just serve unencoded response
@@ -48,13 +45,14 @@ func Compress(opts ...CompressOption) func(http.Handler) http.Handler {
 				}
 
 				defer writer.Close()
-				wrapper := &gzipWrapper{
+				next.ServeHTTP(&gzipWrapper{
 					ResponseWriter: w,
 					w:              writer,
-				}
-				next.ServeHTTP(wrapper, r)
+				}, r)
 			} else {
-				next.ServeHTTP(w, r)
+				next.ServeHTTP(&gzipWrapper{
+					ResponseWriter: w,
+				}, r)
 			}
 		})
 	}
@@ -86,6 +84,10 @@ type gzipWrapper struct {
 
 func (g *gzipWrapper) WriteHeader(code int) {
 	g.headers = true
+	g.ResponseWriter.Header().Add("Vary", "Accept-Encoding")
+	if g.w != nil {
+		g.ResponseWriter.Header().Set("Content-Encoding", "gzip")
+	}
 	g.ResponseWriter.WriteHeader(code)
 }
 
@@ -93,5 +95,8 @@ func (g *gzipWrapper) Write(b []byte) (int, error) {
 	if !g.headers {
 		g.WriteHeader(http.StatusOK)
 	}
-	return g.w.Write(b)
+	if g.w != nil {
+		return g.w.Write(b)
+	}
+	return g.ResponseWriter.Write(b)
 }

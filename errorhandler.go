@@ -29,7 +29,7 @@ func WithClearHeadersOnError(clearHeaders bool) ErrorHandlerOption {
 // a custom handler. Specific error codes can be handled by calling
 // WithErrorHandler. If the next handler writes a status code that has a
 // registered handler, its response will be dropped.
-func ErrorHandler(next http.Handler, opts ...ErrorHandlerOption) http.Handler {
+func ErrorHandler(opts ...ErrorHandlerOption) func(http.Handler) http.Handler {
 	config := &errorHandlerConfig{
 		handlers:     make(map[int]http.Handler),
 		clearHeaders: true,
@@ -38,16 +38,18 @@ func ErrorHandler(next http.Handler, opts ...ErrorHandlerOption) http.Handler {
 		opt(config)
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wrapped := &errorHandlingWrapper{
-			ResponseWriter: w,
-			req:            r,
-			conf:           config,
-			drop:           false,
-		}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			wrapped := &errorHandlingWrapper{
+				ResponseWriter: w,
+				req:            r,
+				conf:           config,
+				drop:           false,
+			}
 
-		next.ServeHTTP(wrapped, r)
-	})
+			next.ServeHTTP(wrapped, r)
+		})
+	}
 }
 
 type errorHandlingWrapper struct {

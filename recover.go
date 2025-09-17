@@ -23,22 +23,24 @@ func WithPanicLogger(logger RecoverPanicLogger) RecoverOption {
 
 // Recover is a middleware that will recover from downstream panics, log the
 // error, and send a 500 response to the client.
-func Recover(next http.Handler, opts ...RecoverOption) http.Handler {
+func Recover(opts ...RecoverOption) func(http.Handler) http.Handler {
 	config := &recoverConfig{logger: defaultPanicLogger}
 	for _, opt := range opts {
 		opt(config)
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				config.logger(r, err)
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		}()
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if err := recover(); err != nil {
+					config.logger(r, err)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				}
+			}()
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func defaultPanicLogger(r *http.Request, err any) {

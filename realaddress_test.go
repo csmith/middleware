@@ -141,9 +141,9 @@ func TestRealAddress(t *testing.T) {
 			}
 
 			var actualAddr string
-			handler := RealAddress(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler := RealAddress(opts...)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				actualAddr = r.RemoteAddr
-			}), opts...)
+			}))
 
 			req := httptest.NewRequest("GET", "/", nil)
 			req.RemoteAddr = tt.remoteAddr

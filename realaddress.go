@@ -34,7 +34,7 @@ func WithTrustedProxies(trustedProxies []net.IPNet) RealAddressOption {
 //
 // By default, only proxies on private IP addresses will be trusted. If you need to
 // trust other addresses, use the WithTrustedProxies option.
-func RealAddress(next http.Handler, opts ...RealAddressOption) http.Handler {
+func RealAddress(opts ...RealAddressOption) func(http.Handler) http.Handler {
 	conf := realAddressConfig{
 		trustedProxies: defaultTrustedProxies,
 	}
@@ -42,11 +42,13 @@ func RealAddress(next http.Handler, opts ...RealAddressOption) http.Handler {
 		opt(&conf)
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.RemoteAddr = selectRealAddress(collateForwardedHops(r), conf.trustedProxies)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.RemoteAddr = selectRealAddress(collateForwardedHops(r), conf.trustedProxies)
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func collateForwardedHops(r *http.Request) []string {

@@ -23,10 +23,10 @@ func TestTextLog_CommonFormat(t *testing.T) {
 
 	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
 
-	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := TextLog(WithTextLogSink(sink), withTestClock(testTime))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("test response"))
-	}), WithTextLogSink(sink), withTestClock(testTime))
+	}))
 
 	req := httptest.NewRequest("GET", "/apache_pb.gif", nil)
 	req.RemoteAddr = "127.0.0.1:8080"
@@ -47,10 +47,10 @@ func TestTextLog_CombinedFormat(t *testing.T) {
 
 	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
 
-	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := TextLog(WithTextLogSink(sink), WithTextLogFormat(TextLogFormatCombined), withTestClock(testTime))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Hello World!"))
-	}), WithTextLogSink(sink), WithTextLogFormat(TextLogFormatCombined), withTestClock(testTime))
+	}))
 
 	req := httptest.NewRequest("GET", "/apache_pb.gif", nil)
 	req.RemoteAddr = "127.0.0.1:8080"
@@ -73,9 +73,9 @@ func TestTextLog_EscapingSpecialCharacters(t *testing.T) {
 
 	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
 
-	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := TextLog(WithTextLogSink(sink), WithTextLogFormat(TextLogFormatCombined), withTestClock(testTime))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}), WithTextLogSink(sink), WithTextLogFormat(TextLogFormatCombined), withTestClock(testTime))
+	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.RemoteAddr = "127.0.0.1:8080"
@@ -123,10 +123,10 @@ func TestTextLog_WriteWithoutHeaders(t *testing.T) {
 
 	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
 
-	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := TextLog(WithTextLogSink(sink), withTestClock(testTime))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only call Write, not WriteHeader - should default to 200
 		w.Write([]byte("test content"))
-	}), WithTextLogSink(sink), withTestClock(testTime))
+	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.RemoteAddr = "127.0.0.1:8080"
@@ -149,11 +149,11 @@ func TestTextLog_MultipleWrites(t *testing.T) {
 
 	testTime := time.Date(2000, 10, 10, 13, 55, 36, 0, time.FixedZone("PDT", -7*3600))
 
-	handler := TextLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := TextLog(WithTextLogSink(sink), withTestClock(testTime))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Multiple writes without explicit WriteHeader
 		w.Write([]byte("hello "))
 		w.Write([]byte("world"))
-	}), WithTextLogSink(sink), withTestClock(testTime))
+	}))
 
 	req := httptest.NewRequest("GET", "/multiwrite", nil)
 	req.RemoteAddr = "127.0.0.1:8080"

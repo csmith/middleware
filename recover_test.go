@@ -14,7 +14,7 @@ func TestRecover_NormalExecution(t *testing.T) {
 		w.Write([]byte("success"))
 	})
 
-	handler := Recover(nextHandler)
+	handler := Recover()(nextHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	rr := httptest.NewRecorder()
@@ -30,7 +30,7 @@ func TestRecover_Panic(t *testing.T) {
 		panic("something went wrong")
 	})
 
-	handler := Recover(nextHandler)
+	handler := Recover()(nextHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	rr := httptest.NewRecorder()
@@ -54,7 +54,7 @@ func TestRecover_CustomLogger(t *testing.T) {
 		panic("custom error")
 	})
 
-	handler := Recover(nextHandler, WithPanicLogger(customLogger))
+	handler := Recover(WithPanicLogger(customLogger))(nextHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	rr := httptest.NewRecorder()

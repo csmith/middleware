@@ -47,7 +47,7 @@ var defaultCacheTimes = map[string]time.Duration{
 //
 // If the upstream handler sets the Cache-Control header, it will not be changed
 // by this middleware.
-func CacheControl(next http.Handler, opts ...CacheControlOption) http.Handler {
+func CacheControl(opts ...CacheControlOption) func(http.Handler) http.Handler {
 	config := &cacheControlConfig{
 		cacheTimes: defaultCacheTimes,
 	}
@@ -55,14 +55,16 @@ func CacheControl(next http.Handler, opts ...CacheControlOption) http.Handler {
 		opt(config)
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wrapped := &cacheControlWrapper{
-			ResponseWriter: w,
-			conf:           config,
-		}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			wrapped := &cacheControlWrapper{
+				ResponseWriter: w,
+				conf:           config,
+			}
 
-		next.ServeHTTP(wrapped, r)
-	})
+			next.ServeHTTP(wrapped, r)
+		})
+	}
 }
 
 type cacheControlWrapper struct {

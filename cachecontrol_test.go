@@ -10,7 +10,7 @@ import (
 )
 
 func TestCacheControl_DefaultBehavior(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("test image"))
@@ -45,7 +45,7 @@ func TestCacheControl_SpecificContentType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", tt.contentType)
 				w.WriteHeader(http.StatusOK)
 			}))
@@ -61,7 +61,7 @@ func TestCacheControl_SpecificContentType(t *testing.T) {
 }
 
 func TestCacheControl_ContentTypeWithCharset(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -76,7 +76,7 @@ func TestCacheControl_ContentTypeWithCharset(t *testing.T) {
 }
 
 func TestCacheControl_FallbackToMainType(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/webp") // Not in specific types, should fallback to "image"
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -91,7 +91,7 @@ func TestCacheControl_FallbackToMainType(t *testing.T) {
 }
 
 func TestCacheControl_NoMatchingType(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "unknown/type")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -105,7 +105,7 @@ func TestCacheControl_NoMatchingType(t *testing.T) {
 }
 
 func TestCacheControl_NoContentType(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -118,7 +118,7 @@ func TestCacheControl_NoContentType(t *testing.T) {
 }
 
 func TestCacheControl_ExistingCacheControlHeader(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("Cache-Control", "no-cache") // Pre-existing header
 		w.WriteHeader(http.StatusOK)
@@ -140,10 +140,10 @@ func TestCacheControl_CustomCacheTimes(t *testing.T) {
 		"custom/type":      time.Second * 45,
 	}
 
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl(WithCacheTimes(customTimes))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-	}), WithCacheTimes(customTimes))
+	}))
 
 	req := httptest.NewRequest("GET", "/test.json", nil)
 	rr := httptest.NewRecorder()
@@ -159,10 +159,10 @@ func TestCacheControl_CustomCacheTimesMainTypeFallback(t *testing.T) {
 		"image/*": time.Hour * 2,
 	}
 
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl(WithCacheTimes(customTimes))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/webp")
 		w.WriteHeader(http.StatusOK)
-	}), WithCacheTimes(customTimes))
+	}))
 
 	req := httptest.NewRequest("GET", "/test.webp", nil)
 	rr := httptest.NewRecorder()
@@ -174,7 +174,7 @@ func TestCacheControl_CustomCacheTimesMainTypeFallback(t *testing.T) {
 }
 
 func TestCacheControl_WriteMethod(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("test content")) // Test Write method
 	}))
@@ -189,7 +189,7 @@ func TestCacheControl_WriteMethod(t *testing.T) {
 }
 
 func TestCacheControl_MultipleWrites(t *testing.T) {
-	handler := CacheControl(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := CacheControl()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("first "))
 		w.Write([]byte("second"))

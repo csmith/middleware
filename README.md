@@ -26,14 +26,14 @@ func main() {
 	mux := http.NewServeMux()
 
 	// With default cache times
-	http.ListenAndServe(":8080", middleware.CacheControl(mux))
+	http.ListenAndServe(":8080", middleware.CacheControl()(mux))
 
 	// With custom cache times
-	http.ListenAndServe(":8080", middleware.CacheControl(mux, middleware.WithCacheTimes(map[string]time.Duration{
+	http.ListenAndServe(":8080", middleware.CacheControl(middleware.WithCacheTimes(map[string]time.Duration{
 		"application/json": time.Duration(0),
 		"image/*":          time.Hour * 24,
 		"text/css":         time.Hour * 12,
-	})))
+	}))(mux))
 }
 ```
 
@@ -66,13 +66,12 @@ func main() {
 	})
 
 	handler := middleware.ErrorHandler(
-		mux,
 		// Add one more handlers for specific status codes
 		middleware.WithErrorHandler(http.StatusNotFound, notFoundHandler),
 		middleware.WithErrorHandler(http.StatusInternalServerError, serverErrorHandler),
 		// If you want to preserve headers set by the original handler
 		middleware.WithClearHeadersOnError(false),
-	)
+	)(mux)
 
 	http.ListenAndServe(":8080", handler)
 }
@@ -99,11 +98,11 @@ func main() {
 	mux := http.NewServeMux()
 
 	// With default options
-	http.ListenAndServe(":8080", middleware.RealAddress(mux))
+	http.ListenAndServe(":8080", middleware.RealAddress()(mux))
 
 	// With custom trusted proxies
 	var trustedProxies []net.IPNet // Populate appropriately
-	http.ListenAndServe(":8080", middleware.RealAddress(mux, middleware.WithTrustedProxies(trustedProxies)))
+	http.ListenAndServe(":8080", middleware.RealAddress(middleware.WithTrustedProxies(trustedProxies))(mux))
 }
 ```
 
@@ -126,12 +125,12 @@ func main() {
 	mux := http.NewServeMux()
 
 	// With default options
-	http.ListenAndServe(":8080", middleware.Recover(mux))
+	http.ListenAndServe(":8080", middleware.Recover()(mux))
 
 	// With custom logger
-	http.ListenAndServe(":8080", middleware.Recover(mux, middleware.WithPanicLogger(func(r *http.Request, err any) {
+	http.ListenAndServe(":8080", middleware.Recover(middleware.WithPanicLogger(func(r *http.Request, err any) {
 		slog.Error("Panic serving request", "err", err, "url", r.URL)
-	})))
+	}))(mux))
 }
 ```
 
@@ -153,16 +152,16 @@ func main() {
 	mux := http.NewServeMux()
 
 	// With default options (Common Log Format to stdout)
-	http.ListenAndServe(":8080", middleware.TextLog(mux))
+	http.ListenAndServe(":8080", middleware.TextLog()(mux))
 
 	// With Combined Log Format
-	http.ListenAndServe(":8080", middleware.TextLog(mux, middleware.WithTextLogFormat(middleware.TextLogFormatCombined)))
+	http.ListenAndServe(":8080", middleware.TextLog(middleware.WithTextLogFormat(middleware.TextLogFormatCombined))(mux))
 
 	// With custom sink
 	file, _ := os.OpenFile("access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	http.ListenAndServe(":8080", middleware.TextLog(mux, middleware.WithTextLogSink(func(line string) {
+	http.ListenAndServe(":8080", middleware.TextLog(middleware.WithTextLogSink(func(line string) {
 		file.WriteString(line + "\n")
-	})))
+	}))(mux))
 }
 ```
 

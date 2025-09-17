@@ -44,7 +44,7 @@ func WithTextLogFormat(format TextLogFormat) TextLogOption {
 // By default each request will be logged to stdout in the 'common' log format.
 // Use WithTextLogSink to handle the log lines differently, and
 // WithTextLogFormat to change the format.
-func TextLog(next http.Handler, opts ...TextLogOption) http.Handler {
+func TextLog(opts ...TextLogOption) func(http.Handler) http.Handler {
 	conf := &textLogConfig{
 		sink: func(s string) {
 			fmt.Printf(s)
@@ -57,14 +57,16 @@ func TextLog(next http.Handler, opts ...TextLogOption) http.Handler {
 		opt(conf)
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wrapped := &textLogWrapper{
-			ResponseWriter: w,
-		}
-		start := conf.clock()
-		next.ServeHTTP(wrapped, r)
-		conf.sink(formatTextLog(conf.format, r, wrapped.status, wrapped.written, start))
-	})
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			wrapped := &textLogWrapper{
+				ResponseWriter: w,
+			}
+			start := conf.clock()
+			next.ServeHTTP(wrapped, r)
+			conf.sink(formatTextLog(conf.format, r, wrapped.status, wrapped.written, start))
+		})
+	}
 }
 
 func formatTextLog(format TextLogFormat, r *http.Request, status int, written int, start time.Time) string {

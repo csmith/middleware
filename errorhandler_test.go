@@ -14,7 +14,7 @@ func TestErrorHandler_NoErrorHandlerRegistered(t *testing.T) {
 		w.Write([]byte("not found"))
 	})
 
-	handler := ErrorHandler(nextHandler)
+	handler := ErrorHandler()(nextHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	rr := httptest.NewRecorder()
@@ -69,9 +69,9 @@ func TestErrorHandler_WithCustomErrorHandlers(t *testing.T) {
 				w.Write([]byte("bad request"))
 			})
 
-			handler := ErrorHandler(nextHandler,
+			handler := ErrorHandler(
 				WithErrorHandler(http.StatusNotFound, notFoundHandler),
-				WithErrorHandler(http.StatusInternalServerError, serverErrorHandler))
+				WithErrorHandler(http.StatusInternalServerError, serverErrorHandler))(nextHandler)
 
 			req := httptest.NewRequest("GET", "/test", nil)
 			rr := httptest.NewRecorder()
@@ -98,7 +98,7 @@ func TestErrorHandler_HeadersClearedByDefault(t *testing.T) {
 		w.Write([]byte("default response"))
 	})
 
-	handler := ErrorHandler(nextHandler, WithErrorHandler(http.StatusNotFound, errorHandler))
+	handler := ErrorHandler(WithErrorHandler(http.StatusNotFound, errorHandler))(nextHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	rr := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func TestErrorHandler_HeadersClearedByDefault(t *testing.T) {
 }
 
 func TestErrorHandler_WriteWithoutHeaders(t *testing.T) {
-	handler := ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := ErrorHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only call Write, not WriteHeader - should default to 200
 		w.Write([]byte("success content"))
 	}))
@@ -129,7 +129,7 @@ func TestErrorHandler_WriteWithoutHeaders(t *testing.T) {
 }
 
 func TestErrorHandler_MultipleWrites(t *testing.T) {
-	handler := ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := ErrorHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Multiple writes without explicit WriteHeader
 		w.Write([]byte("hello "))
 		w.Write([]byte("world"))
@@ -159,9 +159,9 @@ func TestErrorHandler_HeadersNotClearedWhenDisabled(t *testing.T) {
 		w.Write([]byte("default response"))
 	})
 
-	handler := ErrorHandler(nextHandler,
+	handler := ErrorHandler(
 		WithErrorHandler(http.StatusNotFound, errorHandler),
-		WithClearHeadersOnError(false))
+		WithClearHeadersOnError(false))(nextHandler)
 
 	req := httptest.NewRequest("GET", "/test", nil)
 	rr := httptest.NewRecorder()

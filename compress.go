@@ -87,6 +87,7 @@ func (g *gzipWrapper) WriteHeader(code int) {
 	g.ResponseWriter.Header().Add("Vary", "Accept-Encoding")
 	if g.w != nil {
 		g.ResponseWriter.Header().Set("Content-Encoding", "gzip")
+		g.ResponseWriter.Header().Del("Content-Length")
 	}
 	g.ResponseWriter.WriteHeader(code)
 }

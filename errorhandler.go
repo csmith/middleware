@@ -86,6 +86,5 @@ func (e *errorHandlingWrapper) Write(b []byte) (int, error) {
 		return len(b), nil
 	}
 
-	n, err := e.ResponseWriter.Write(b)
-	return n, err
+	return e.ResponseWriter.Write(b)
 }

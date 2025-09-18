@@ -162,6 +162,34 @@ func main() {
 }
 ```
 
+### Headers
+
+Adds headers to a response as late as possible. This may be useful when chained
+with other middleware such as ErrorHandler that change headers.
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	handler := middleware.Headers(
+		middleware.WithHeader("X-Frame-Options", "DENY"),
+		middleware.WithHeader("X-Content-Type-Options", "nosniff"),
+		middleware.WithHeader("Cache-Control", "no-cache"),
+		middleware.WithHeader("Cache-Control", "no-store"), // Multiple values for same key
+	)(mux)
+
+	http.ListenAndServe(":8080", handler)
+}
+```
+
 ### Real Address
 
 Gets the real address of the client by parsing `X-Forwarded-For` headers from

@@ -140,7 +140,7 @@ func TestCompress_WithCompressionCheck_AllowsCompression(t *testing.T) {
 
 func TestCompress_WithCompressionCheck_DeniesCompression(t *testing.T) {
 	compressionCheck := func(r *http.Request) bool {
-		return r.URL.Path == "/dontcompress"
+		return r.URL.Path == "/compress"
 	}
 
 	handler := Compress(WithCompressionCheck(compressionCheck))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

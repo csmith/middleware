@@ -101,3 +101,9 @@ func (g *gzipWrapper) Write(b []byte) (int, error) {
 	}
 	return g.ResponseWriter.Write(b)
 }
+
+func (g *gzipWrapper) Flush() {
+	if flusher, ok := g.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}

@@ -109,3 +109,9 @@ func (c *cacheControlWrapper) Write(b []byte) (int, error) {
 	n, err := c.ResponseWriter.Write(b)
 	return n, err
 }
+
+func (c *cacheControlWrapper) Flush() {
+	if flusher, ok := c.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}

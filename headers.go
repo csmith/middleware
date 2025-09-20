@@ -59,3 +59,9 @@ func (h *headersWrapper) Write(b []byte) (int, error) {
 	}
 	return h.ResponseWriter.Write(b)
 }
+
+func (h *headersWrapper) Flush() {
+	if flusher, ok := h.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}

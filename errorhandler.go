@@ -88,3 +88,9 @@ func (e *errorHandlingWrapper) Write(b []byte) (int, error) {
 
 	return e.ResponseWriter.Write(b)
 }
+
+func (e *errorHandlingWrapper) Flush() {
+	if flusher, ok := e.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}

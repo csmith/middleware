@@ -113,6 +113,72 @@ func TestCompress_ValidGzipLevel(t *testing.T) {
 	assert.Equal(t, "test content", string(decompressed))
 }
 
+func TestCompress_WithCompressionCheck_AllowsCompression(t *testing.T) {
+	compressionCheck := func(r *http.Request) bool {
+		return r.URL.Path == "/compress"
+	}
+
+	handler := Compress(WithCompressionCheck(compressionCheck))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("test content"))
+	}))
+
+	req := httptest.NewRequest("GET", "/compress", nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	reader, err := gzip.NewReader(rr.Body)
+	require.NoError(t, err)
+	defer reader.Close()
+
+	decompressed, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	assert.Equal(t, "test content", string(decompressed))
+	assert.Equal(t, "gzip", rr.Header().Get("Content-Encoding"))
+}
+
+func TestCompress_WithCompressionCheck_DeniesCompression(t *testing.T) {
+	compressionCheck := func(r *http.Request) bool {
+		return r.URL.Path == "/dontcompress"
+	}
+
+	handler := Compress(WithCompressionCheck(compressionCheck))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("test content"))
+	}))
+
+	req := httptest.NewRequest("GET", "/dontcompress", nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, "test content", rr.Body.String())
+	assert.Empty(t, rr.Header().Get("Content-Encoding"))
+	assert.Empty(t, rr.Header().Get("Vary"))
+}
+
+func TestCompress_WithCompressionCheck_NilCheck(t *testing.T) {
+	handler := Compress(WithCompressionCheck(nil))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("test content"))
+	}))
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("Accept-Encoding", "gzip")
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	reader, err := gzip.NewReader(rr.Body)
+	require.NoError(t, err)
+	defer reader.Close()
+
+	decompressed, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	assert.Equal(t, "test content", string(decompressed))
+	assert.Equal(t, "gzip", rr.Header().Get("Content-Encoding"))
+}
+
 func TestParseEncodings(t *testing.T) {
 	tests := []struct {
 		name     string

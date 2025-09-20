@@ -8,7 +8,8 @@ import (
 )
 
 type compressConfig struct {
-	gzipLevel int
+	gzipLevel       int
+	compressionCheck func(*http.Request) bool
 }
 
 type CompressOption func(*compressConfig)
@@ -17,6 +18,14 @@ type CompressOption func(*compressConfig)
 func WithGzipLevel(level int) CompressOption {
 	return func(config *compressConfig) {
 		config.gzipLevel = level
+	}
+}
+
+// WithCompressionCheck sets a function to determine if a request should be compressed
+// The function should return true if compression should be applied, false otherwise
+func WithCompressionCheck(check func(*http.Request) bool) CompressOption {
+	return func(config *compressConfig) {
+		config.compressionCheck = check
 	}
 }
 
@@ -35,6 +44,12 @@ func Compress(opts ...CompressOption) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if compression should be applied
+			if config.compressionCheck != nil && !config.compressionCheck(r) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			encs := parseEncodings(r.Header.Values("Accept-Encoding"))
 			if encs["gzip"] > 0 || encs["*"] > 0 {
 				writer, err := gzip.NewWriterLevel(w, config.gzipLevel)

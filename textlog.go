@@ -154,3 +154,9 @@ func (t *textLogWrapper) Write(b []byte) (int, error) {
 	t.written += n
 	return n, err
 }
+
+func (t *textLogWrapper) Flush() {
+	if flusher, ok := t.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}

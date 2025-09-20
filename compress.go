@@ -8,7 +8,7 @@ import (
 )
 
 type compressConfig struct {
-	gzipLevel       int
+	gzipLevel        int
 	compressionCheck func(*http.Request) bool
 }
 
@@ -21,8 +21,9 @@ func WithGzipLevel(level int) CompressOption {
 	}
 }
 
-// WithCompressionCheck sets a function to determine if a request should be compressed
-// The function should return true if compression should be applied, false otherwise
+// WithCompressionCheck sets a function to determine if a request should be compressed.
+// The function should return true if compression should be applied, false otherwise.
+// Compression is still subject to the client sending the appropriate Accent-Encoding header.
 func WithCompressionCheck(check func(*http.Request) bool) CompressOption {
 	return func(config *compressConfig) {
 		config.compressionCheck = check

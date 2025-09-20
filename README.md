@@ -61,6 +61,11 @@ func main() {
 
 	// With custom compression level
 	http.ListenAndServe(":8080", middleware.Compress(middleware.WithGzipLevel(gzip.BestSpeed))(mux))
+	
+	// With additional custom logic for disabling compression on certain requests 
+	http.ListenAndServe(":8080", middleware.Compress(middleware.WithCompressionCheck(func(r *http.Request) bool {
+		return r.URL.Path != "/special"
+	}))(mux))
 }
 ```
 

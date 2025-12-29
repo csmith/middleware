@@ -283,6 +283,53 @@ func main() {
 }
 ```
 
+### Strip Trailing Slashes
+
+Removes trailing slashes from request URLs
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// Requests to /foo/ will be served as /foo
+	http.ListenAndServe(":8080", middleware.StripTrailingSlashes()(mux))
+}
+```
+
+### Redirect Trailing Slashes
+
+Redirects URLs without trailing slashes to their equivalent with a trailing slash
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// With default redirect code 308 Permanent Redirect
+	http.ListenAndServe(":8080", middleware.RedirectTrailingSlashes()(mux))
+
+	// With custom redirect code 307 Temporary Redirect)
+	http.ListenAndServe(":8080", middleware.RedirectTrailingSlashes(
+		middleware.WithRedirectCode(http.StatusTemporaryRedirect),
+	)(mux))
+}
+```
+
 ## Issues/Contributing/etc
 
 Bug reports, feature requests, and pull requests are all welcome.

@@ -283,6 +283,47 @@ func main() {
 }
 ```
 
+### Verify Signature
+
+Verifies request signatures using HMAC. Reads the request body, computes the
+HMAC using the specified algorithm and secret, and compares it to the value in
+the specified header. Useful for validating webhook payloads from services like
+GitHub.
+
+The signature header may contain just the hex-encoded hash, or be prefixed with
+the algorithm name followed by an equals sign (e.g. `sha256=abcdef...`). Both
+formats are accepted. Supported algorithms are `SHA1`, `SHA256` (the default),
+and `SHA512`.
+
+Requests with a missing or invalid signature receive a 403 Forbidden response.
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// GitHub-style webhook validation
+	http.ListenAndServe(":8080", middleware.VerifySignature(
+		middleware.WithSignatureHeader("X-Hub-Signature-256"),
+		middleware.WithSignatureSecret("my-webhook-secret"),
+	)(mux))
+
+	// Using a different algorithm
+	http.ListenAndServe(":8080", middleware.VerifySignature(
+		middleware.WithSignatureHeader("X-Signature"),
+		middleware.WithSignatureAlgorithm(middleware.SHA1),
+		middleware.WithSignatureSecret("my-secret"),
+	)(mux))
+}
+```
+
 ### Strip Trailing Slashes
 
 Removes trailing slashes from request URLs

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 - 2026-04-25
+
+### New features
+
+ - Added middleware to verify payload signatures (e.g. GitHub webhooks)
+
 ## 1.1.0 - 2025-12-29
 
 ### New features

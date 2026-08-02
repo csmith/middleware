@@ -195,6 +195,38 @@ func main() {
 }
 ```
 
+### HSTS
+
+Adds a `Strict-Transport-Security` header to responses. By default the
+header is only set on HTTPS requests. When running behind a reverse proxy,
+enable the reverse proxy option to also detect HTTPS via the
+`X-Forwarded-Proto` header.
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// With default options (1 year max-age, direct HTTPS only)
+	http.ListenAndServe(":8080", middleware.HSTS()(mux))
+
+	// With all options
+	http.ListenAndServe(":8080", middleware.HSTS(
+		middleware.WithHSTSMaxAge(31556955),
+		middleware.WithHSTSIncludeSubDomains(),
+		middleware.WithHSTSPreload(),
+		middleware.WithHSTSReverseProxy(),
+	)(mux))
+}
+```
+
 ### Real Address
 
 Gets the real address of the client by parsing `X-Forwarded-For` headers from

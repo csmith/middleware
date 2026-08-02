@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### New features
+
+ - Added HSTS middleware to set Strict-Transport-Security headers
+
 ## 1.2.0 - 2026-04-25
 
 ### New features

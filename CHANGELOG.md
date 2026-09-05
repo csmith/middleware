@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### New features
+
+ - Added ObserveRequests middleware, to make it easier to do
+   custom logging etc.
+
 ## 1.3.0 - 2026-08-02 
 
 ### New features

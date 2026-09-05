@@ -256,6 +256,41 @@ func main() {
 }
 ```
 
+### Request Observer
+
+Invokes a function once per request with details of the outcome: the final
+non-informational status code written to the response (200 if the handler
+returned without writing anything, or 0 if no final response existed, such as
+a handler panicking before committing one), the number of body bytes
+successfully written, and the total duration.
+
+```go
+package main
+
+import (
+	"log/slog"
+	"net/http"
+
+	"github.com/csmith/middleware"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	observer := middleware.WithRequestObserver(func(r *http.Request, res middleware.RequestResult) {
+		slog.LogAttrs(r.Context(), slog.LevelInfo, "request",
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.Int("status", res.StatusCode),
+			slog.Int64("bytes", res.BytesWritten),
+			slog.Duration("duration", res.Duration),
+		)
+	})
+
+	http.ListenAndServe(":8080", middleware.ObserveRequests(observer)(mux))
+}
+```
+
 ### Recover
 
 Recovers from downstream panics by logging them and returning a 500 error to
